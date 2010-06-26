@@ -4,15 +4,17 @@ Created on May 27, 2010
 
 @author: nikolavp
 '''
-HOST = "localhost"
-PORT = "6600"
-PASSWORD = None
+
 from gui import gui_client
 from PyQt4.QtGui import QApplication
 from mpd import MPDClient, CommandError
 from socket import error as SocketError
 import logging
 import sys
+
+HOST = "localhost"
+PORT = "6600"
+PASSWORD = None
 
 logging.basicConfig(level=logging.WARNING)
 LOG = logging.getLogger("mpd")
@@ -33,9 +35,9 @@ def connect():
     return mpd_api
 
 def main():
-    mod_api = connect()
+    mpd_api = connect()
     app = QApplication(sys.argv)
-    gui = gui_client(mod_api)
+    gui = gui_client(mpd_api)
     gui.show()
     app.exec_()
 
