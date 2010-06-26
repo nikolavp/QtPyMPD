@@ -37,12 +37,17 @@
        <enum>QTabWidget::West</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="playlistsTab">
        <attribute name="title">
         <string>Playlists</string>
        </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <widget class="QListView" name="listView"/>
+        </item>
+       </layout>
       </widget>
       <widget class="QWidget" name="libraryTab">
        <attribute name="title">
@@ -64,7 +69,23 @@
      </widget>
     </item>
     <item row="1" column="1">
-     <widget class="QTableView" name="tableView"/>
+     <widget class="QTableView" name="tableView">
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAlwaysOff</enum>
+      </property>
+      <property name="dragDropMode">
+       <enum>QAbstractItemView::DropOnly</enum>
+      </property>
+      <attribute name="horizontalHeaderCascadingSectionResizes">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="horizontalHeaderCascadingSectionResizes">
+       <bool>true</bool>
+      </attribute>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -103,8 +124,9 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="actionExit"/>
-   <addaction name="actionPlay"/>
+   <addaction name="actionPrev"/>
+   <addaction name="actionToggle"/>
+   <addaction name="actionNext"/>
    <addaction name="actionStop"/>
   </widget>
   <action name="actionExit">
@@ -122,7 +144,7 @@
     <string>&amp;About</string>
    </property>
   </action>
-  <action name="actionPlay">
+  <action name="actionToggle">
    <property name="text">
     <string>Play</string>
    </property>
@@ -142,6 +164,16 @@
    </property>
    <property name="shortcut">
     <string>Meta+S</string>
+   </property>
+  </action>
+  <action name="actionPrev">
+   <property name="text">
+    <string>Previous</string>
+   </property>
+  </action>
+  <action name="actionNext">
+   <property name="text">
+    <string>Next</string>
    </property>
   </action>
  </widget>
