@@ -36,10 +36,12 @@ def connect():
 
 def main():
     mpd_api = connect()
+    mpd_api.update()
     app = QApplication(sys.argv)
     gui = gui_client(mpd_api)
     gui.show()
     app.exec_()
+    mpd_api.disconnect()
 
 
 if __name__ == '__main__':
