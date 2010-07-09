@@ -78,7 +78,23 @@
           <widget class="QLineEdit" name="searchLib"/>
          </item>
          <item>
-          <widget class="QListView" name="libraryDatabase"/>
+          <widget class="QListView" name="libraryDatabase">
+           <property name="dragEnabled">
+            <bool>true</bool>
+           </property>
+           <property name="dragDropOverwriteMode">
+            <bool>true</bool>
+           </property>
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::DragDrop</enum>
+           </property>
+           <property name="selectionMode">
+            <enum>QAbstractItemView::ExtendedSelection</enum>
+           </property>
+           <property name="selectionBehavior">
+            <enum>QAbstractItemView::SelectRows</enum>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
@@ -109,8 +125,14 @@
        <property name="horizontalScrollBarPolicy">
         <enum>Qt::ScrollBarAlwaysOff</enum>
        </property>
+       <property name="dragEnabled">
+        <bool>true</bool>
+       </property>
+       <property name="dragDropOverwriteMode">
+        <bool>true</bool>
+       </property>
        <property name="dragDropMode">
-        <enum>QAbstractItemView::DropOnly</enum>
+        <enum>QAbstractItemView::DragDrop</enum>
        </property>
        <attribute name="horizontalHeaderCascadingSectionResizes">
         <bool>true</bool>

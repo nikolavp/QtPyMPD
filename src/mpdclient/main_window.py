@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Sun Jun 27 00:52:16 2010
+# Created: Thu Jul  8 01:17:45 2010
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -57,6 +57,11 @@ class Ui_MainWindow(object):
         self.searchLib.setObjectName("searchLib")
         self.verticalLayout_4.addWidget(self.searchLib)
         self.libraryDatabase = QtGui.QListView(self.libraryTab)
+        self.libraryDatabase.setDragEnabled(True)
+        self.libraryDatabase.setDragDropOverwriteMode(True)
+        self.libraryDatabase.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
+        self.libraryDatabase.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.libraryDatabase.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.libraryDatabase.setObjectName("libraryDatabase")
         self.verticalLayout_4.addWidget(self.libraryDatabase)
         self.tabWidget.addTab(self.libraryTab, "")
@@ -79,7 +84,9 @@ class Ui_MainWindow(object):
         self.tableView.setSizePolicy(sizePolicy)
         self.tableView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.tableView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.tableView.setDragDropMode(QtGui.QAbstractItemView.DropOnly)
+        self.tableView.setDragEnabled(True)
+        self.tableView.setDragDropOverwriteMode(True)
+        self.tableView.setDragDropMode(QtGui.QAbstractItemView.DragDrop)
         self.tableView.setObjectName("tableView")
         self.tableView.horizontalHeader().setCascadingSectionResizes(True)
         self.tableView.verticalHeader().setCascadingSectionResizes(True)
