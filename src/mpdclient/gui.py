@@ -188,9 +188,8 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.actionPrev.triggered.connect(self.play_previous)
         self.actionNext.triggered.connect(self.playnext)
         self.searchDirLib.textEdited.connect(self._filter_dirlib_files)
-        
         self.horizontalSlider.sliderReleased.connect(self.seek)
-        self.searchLib.textEdited.connect(self.setup_database_songs)
+        self.searchLib.textEdited.connect(self._filter_database_songs)
 
         self.libraryDirModel = QFileSystemModel(self)
         self.libraryDirModel.setReadOnly(False)
@@ -207,8 +206,9 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.tableView.setModel(self.playlist)
         self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableView.activated.connect(self.play_song)
+        
+        self.setup_database_songs()
 
-        self.setup_database_songs(None)
 
         self.updater = updater(self)
         self.updater.start(1000)
@@ -220,23 +220,15 @@ class gui_client(QMainWindow, Ui_MainWindow):
         else:
             self.libraryDirModel.setNameFilters(['*' + value + '*'])
 
-    def setup_database_songs(self, pattern):
+    def _filter_database_songs(self, pattern):
         if pattern is None or pattern == '':
             all_songs_info = [x['file'] for x in self.mpd_api.listallinfo() if 'file' in x]
-            self.libraryModel = library_model(all_songs_info, self)
+            self.libraryModel.database = all_songs_info
         else:
             matching_songs = self.mpd_api.search('any', pattern)
             matching_songs = [x['file'] for x in matching_songs]
-            self.libraryModel = library_model(matching_songs, self)
-        self.libraryDatabase.setModel(self.libraryModel)
-
-    def seek(self):
-        self.mpd_api.seekid(self.current_song['id'], self.horizontalSlider.value())
-    
-    def play_song(self, index):
-        song = self.playlist.get_song(index, Qt.DisplayRole)
-        self.mpd_api.playid(song['id'])
-        self.current_song = song
+            self.libraryModel.database = matching_songs
+        self.libraryModel.reset()
 
     def setup_playlists(self):
         resources = self.mpd_api.lsinfo()
@@ -244,14 +236,28 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.playlists = playlists_model(playlists, self)
         self.listView.setModel(self.playlists)
 
+    def setup_database_songs(self):
+        all_songs_info = [x['file'] for x in self.mpd_api.listallinfo() if 'file' in x]
+        self.libraryModel = library_model(all_songs_info, self)
+        self.libraryDatabase.setModel(self.libraryModel)
+
+    def seek(self):
+        self.mpd_api.seekid(self.current_song['id'], self.horizontalSlider.value())
+
+    def play_song(self, index):
+        song = self.playlist.get_song(index, Qt.DisplayRole)
+        self.mpd_api.playid(song['id'])
+        self.current_song = song
+
+
     def stop_handle(self):
         self.mpd_api.stop()
         self.updater.update()
-        
+
     def playnext(self):
         self.mpd_api.next()
         self.updater.update()
-        
+
     def play_previous(self):
         self.mpd_api.previous()
         self.updater.update()
