@@ -3,10 +3,8 @@ Created on May 28, 2010
 @author: nikolavp
 '''
 
-from PyQt4.Qt import Qt
-from PyQt4.Qt import QAbstractListModel, Qt, QMainWindow, QFileSystemModel, \
-    QAbstractTableModel, QAbstractItemView, QItemSelectionModel, QTimer, \
-    QMouseEvent, QMimeData, QDataStream, QIODevice, QPalette
+from PyQt4.QtCore import *
+from PyQt4.QtGui import *
 from main_window import Ui_MainWindow
 
 DEFAULT_LIB_PATH = "/var/lib/mpd/music/"
@@ -22,31 +20,33 @@ class playlist_model(QAbstractTableModel):
         self.playlistinfo = mpd_api.playlistinfo()
         self.header_data = PLAYLIST_HEADER_DATA
         self.current_song_pos = -1
-    
+
     def flags(self, index):
         default_flags = QAbstractTableModel.flags(self, index)
         if(index.isValid()):
             return default_flags | Qt.ItemIsDropEnabled
         else:
             return default_flags | Qt.ItemIsDropEnabled
-    
+
     def update_current_song(self, pos):
         self.current_song_pos = pos
-        
+
     def insertRows(self, row, count, parent = None):
+        self.beginInsertRows(QModelIndex(), row, row+count)
         self.playlistinfo[row:row] = [None] * count
-    
+        self.endInsertRows()
+
     def mimeTypes(self):
         return [FILE_TYPE]
-        
+
     def dropMimeData(self, data, action, row, column, parent = None):
         if (action == Qt.IgnoreAction):
-            return True;
-        
+            return True
+
         if not data.hasFormat(FILE_TYPE):
-            return False;
+            return False
         dropped_data = data.data(FILE_TYPE).split('\n')
-        
+
         if parent.row() == -1:
             c = len(self.playlistinfo)
         else:
@@ -59,32 +59,23 @@ class playlist_model(QAbstractTableModel):
             index = self.index(c, 0)
             self.setData(index, song_data[0])
             c+=1
-            
-            
         return True
-        
+
     def setData(self, index, val, parent = None):
-        #We only care about the rows
         self.playlistinfo[index.row()] = val
-        
-    
-#    def mimeData(self, indexes):
-#        print("bla")
-#        mime_data = QMimeData()
-#        encoded_data = None
-#        QDataStream.stream(encoded_data, QIODevice.WriteOnly)
-        
-    def rowCount(self, parent):
+        self.emit(SIGNAL("dataChanged"), index, index)
+
+    def rowCount(self, parent = None):
         return len(self.playlistinfo)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent = None):
         return len(self.header_data)
 
     def get_song(self, index, role):
         if not index.isValid() or role != Qt.DisplayRole:
             return None
         return self.playlistinfo[index.row()]
-    
+
     def modify_field(self, field, value):
         if field == 'time':
             seconds = int(value)
@@ -134,17 +125,17 @@ class library_model(QAbstractListModel):
         self.database = database
     def rowCount(self, parent):
         return len(self.database)
-    
+
     def mimeTypes(self):
         return [FILE_TYPE]
-    
+
     def mimeData(self, indexes):
         mime_data = QMimeData()
         data = [self.data(x, Qt.DisplayRole) for x in indexes if x.isValid()]
         data = "\n".join(data)
         mime_data.setData(FILE_TYPE, data)
         return mime_data
-    
+
     def flags(self, index):
         default_flags = QAbstractListModel.flags(self, index)
         if(index.isValid()):
@@ -171,7 +162,7 @@ class updater(QTimer):
             self.gui.horizontalSlider.setValue(0)
             pos = int(mpd_current_song['pos'])
             self.gui.playlist.update_current_song(pos)
-        
+
 class gui_client(QMainWindow, Ui_MainWindow):
     def update_status(self):
         self.status = self.mpd_api.status()
@@ -184,7 +175,7 @@ class gui_client(QMainWindow, Ui_MainWindow):
         else:
             self.horizontalSlider.setDisabled(True)
             self.actionToggle.setText('Play')
-      
+
     def __init__(self, mpd_api, parent=None):
         QMainWindow.__init__(self, parent)
         Ui_MainWindow.__init__(self)
