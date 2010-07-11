@@ -151,30 +151,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>&amp;File</string>
-    </property>
-    <addaction name="actionExit"/>
-   </widget>
-   <widget class="QMenu" name="menu_Help">
-    <property name="title">
-     <string>&amp;Help</string>
-    </property>
-    <addaction name="action_About"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menu_Help"/>
-  </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="toolBar">
    <property name="windowTitle">
@@ -190,6 +166,39 @@
    <addaction name="actionToggle"/>
    <addaction name="actionNext"/>
    <addaction name="actionStop"/>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuPlaylist">
+    <property name="title">
+     <string>&amp;Playlist</string>
+    </property>
+    <addaction name="actionSave"/>
+    <addaction name="actionClear"/>
+    <addaction name="actionLoad_Playlist"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="action_About_2"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuPlaylist"/>
+   <addaction name="menuHelp"/>
   </widget>
   <action name="actionExit">
    <property name="text">
@@ -236,6 +245,34 @@
   <action name="actionNext">
    <property name="text">
     <string>Next</string>
+   </property>
+  </action>
+  <action name="actionSave">
+   <property name="text">
+    <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="action_Load">
+   <property name="text">
+    <string>&amp;Load Playlist</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="text">
+    <string>Clear</string>
+   </property>
+   <property name="shortcutContext">
+    <enum>Qt::WindowShortcut</enum>
+   </property>
+  </action>
+  <action name="actionLoad_Playlist">
+   <property name="text">
+    <string>Load</string>
+   </property>
+  </action>
+  <action name="action_About_2">
+   <property name="text">
+    <string>&amp;About</string>
    </property>
   </action>
  </widget>

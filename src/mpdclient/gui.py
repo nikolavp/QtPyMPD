@@ -17,9 +17,55 @@ class playlist_model(QAbstractTableModel):
     def __init__(self, mpd_api, parent=None):
         QAbstractTableModel.__init__(self, parent)
         self.mpd_api = mpd_api
-        self.playlistinfo = mpd_api.playlistinfo()
+        self.playlistinfo = self.mpd_api.playlistinfo()
         self.header_data = PLAYLIST_HEADER_DATA
         self.current_song_pos = -1
+
+    def update_current_song(self, pos):
+        oldpos = self.current_song_pos
+        self.current_song_pos = pos
+        self.emit(SIGNAL("dataChanged"), self.index(oldpos, 0), \
+                self.index(pos, 0))
+
+    def setData(self, index, val, parent = None):
+        self.playlistinfo[index.row()] = val
+        self.emit(SIGNAL("dataChanged"), index, index)
+
+    def rowCount(self, parent = None):
+        return len(self.playlistinfo)
+
+    def columnCount(self, parent = None):
+        return len(self.header_data)
+
+    def get_song(self, index, role):
+        if not index.isValid() or role != Qt.DisplayRole:
+            return None
+        return self.playlistinfo[index.row()]
+
+    def modify_field(self, field, value):
+        if field == 'time':
+            seconds = int(value)
+            if seconds > 60:
+                return str(seconds // 60) + ":" + str(seconds % 60)
+            else:
+                return value
+        return value
+
+    def data(self, index, role):
+        #if role == Qt.BackgroundRole and index.row() == self.current_song_pos:
+            #return QPalette().color(QPalette.Dark)
+        if role == Qt.DisplayRole:
+            row = self.get_song(index, role)
+            if row is not None:
+                field = self.header_data[index.column()].lower()
+                if field in row.keys():
+                    return self.modify_field(field, row[field])
+        return None
+
+    def headerData(self, column, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self.header_data[column]
+        return None
 
     def flags(self, index):
         default_flags = QAbstractTableModel.flags(self, index)
@@ -28,11 +74,8 @@ class playlist_model(QAbstractTableModel):
         else:
             return default_flags | Qt.ItemIsDropEnabled
 
-    def update_current_song(self, pos):
-        self.current_song_pos = pos
-
     def insertRows(self, row, count, parent = None):
-        self.beginInsertRows(QModelIndex(), row, row+count)
+        self.beginInsertRows(QModelIndex(), row, row+count - 1)
         self.playlistinfo[row:row] = [None] * count
         self.endInsertRows()
 
@@ -61,63 +104,20 @@ class playlist_model(QAbstractTableModel):
             c+=1
         return True
 
-    def setData(self, index, val, parent = None):
-        self.playlistinfo[index.row()] = val
-        self.emit(SIGNAL("dataChanged"), index, index)
-
-    def rowCount(self, parent = None):
-        return len(self.playlistinfo)
-
-    def columnCount(self, parent = None):
-        return len(self.header_data)
-
-    def get_song(self, index, role):
-        if not index.isValid() or role != Qt.DisplayRole:
-            return None
-        return self.playlistinfo[index.row()]
-
-    def modify_field(self, field, value):
-        if field == 'time':
-            seconds = int(value)
-            if seconds > 60:
-                return str(seconds // 60) + ":" + str(seconds % 60)
-            else:
-                return seconds
-        return value
-
-    def data(self, index, role):
-        if role == Qt.BackgroundRole and index.row() == self.current_song_pos:
-            return QPalette().color(QPalette.Dark)
-        if role == Qt.DisplayRole:
-            row = self.get_song(index, role)
-            if row is not None:
-                field = self.header_data[index.column()].lower()
-                if field in row.keys():
-                    return self.modify_field(field, row[field])
-        return None
-
-    def headerData(self, column, orientation, role):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self.header_data[column]
-        return None
-
-
 class playlists_model(QAbstractListModel):
     """A model class to represent the saved playlists in the gui"""
     def __init__(self, playlists, parent=None):
         QAbstractListModel.__init__(self, parent)
         self.playlists = playlists
 
-    def rowCount(self, parent):
+    def rowCount(self, parent = None):
         return len(self.playlists)
-
-    def supportedDragActions(self):
-        return Qt.CopyAction | Qt.MoveAction
 
     def data(self, index, role):
         if not index.isValid() or role != Qt.DisplayRole:
             return None
         return self.playlists[index.row()]
+
 
 class library_model(QAbstractListModel):
     def __init__(self, database, parent=None):
@@ -142,7 +142,7 @@ class library_model(QAbstractListModel):
             return default_flags | Qt.ItemIsDragEnabled
         else:
             return default_flags 
-        
+
     def data(self, index, role):
         if not index.isValid() or role != Qt.DisplayRole:
             return None
@@ -156,14 +156,43 @@ class updater(QTimer):
     def update(self):
         self.gui.update_status()
         mpd_current_song = self.gui.mpd_api.currentsong()
-        if self.gui.current_song != mpd_current_song:
+        if self.gui.status['state'] == 'lay' and \
+                self.gui.current_song != mpd_current_song:
             self.gui.current_song = mpd_current_song
             self.gui.horizontalSlider.setMaximum(int(self.gui.current_song['time']))
             self.gui.horizontalSlider.setValue(0)
-            pos = int(mpd_current_song['pos'])
-            self.gui.playlist.update_current_song(pos)
+            self.gui.playlist.update_current_song(int(mpd_current_song['pos']))
 
 class gui_client(QMainWindow, Ui_MainWindow):
+    def __init__(self, mpd_api, parent=None):
+        QMainWindow.__init__(self, parent)
+        Ui_MainWindow.__init__(self)
+        self.setupUi(self)
+        self.mpd_api = mpd_api
+        self.current_song = self.mpd_api.currentsong()
+
+        self.actionToggle.triggered.connect(self.toggle_handle)
+        self.actionStop.triggered.connect(self.stop_handle)
+        self.actionPrev.triggered.connect(self.play_previous)
+        self.actionNext.triggered.connect(self.playnext)
+        self.actionSave.triggered.connect(self.save_playlist)
+        self.actionClear.triggered.connect(self.clear_playlist)
+        self.searchDirLib.textEdited.connect(self._filter_dirlib_files)
+        self.horizontalSlider.sliderReleased.connect(self.seek)
+        self.searchLib.textEdited.connect(self._filter_database_songs)
+
+        self.setup_library()
+
+        self.setup_playlists()
+
+        self.setup_playlist()
+
+        self.setup_database_songs()
+
+        self.updater = updater(self)
+        self.updater.start(1000)
+        self.updater.update()
+
     def update_status(self):
         self.status = self.mpd_api.status()
         if self.status['state'] == 'play' and self.current_song is not None:
@@ -176,49 +205,11 @@ class gui_client(QMainWindow, Ui_MainWindow):
             self.horizontalSlider.setDisabled(True)
             self.actionToggle.setText('Play')
 
-    def __init__(self, mpd_api, parent=None):
-        QMainWindow.__init__(self, parent)
-        Ui_MainWindow.__init__(self)
-        self.setupUi(self)
-        self.mpd_api = mpd_api
-        self.current_song = self.mpd_api.currentsong()
-
-        self.actionToggle.triggered.connect(self.toggle_handle)
-        self.actionStop.triggered.connect(self.stop_handle)
-        self.actionPrev.triggered.connect(self.play_previous)
-        self.actionNext.triggered.connect(self.playnext)
-        self.searchDirLib.textEdited.connect(self._filter_dirlib_files)
-        self.horizontalSlider.sliderReleased.connect(self.seek)
-        self.searchLib.textEdited.connect(self._filter_database_songs)
-
-        self.libraryDirModel = QFileSystemModel(self)
-        self.libraryDirModel.setReadOnly(False)
-        self.libraryDirModel.setNameFilterDisables(False)
-        #TODO: This is using a hardcoded string that should 
-        #be changeable in other releases
-        index = self.libraryDirModel.setRootPath(DEFAULT_LIB_PATH)
-        self.treeView.setModel(self.libraryDirModel)
-        self.treeView.setRootIndex(index)
-
-        self.setup_playlists()
-
-        self.playlist = playlist_model(mpd_api, self)
-        self.tableView.setModel(self.playlist)
-        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableView.activated.connect(self.play_song)
-        
-        self.setup_database_songs()
-
-
-        self.updater = updater(self)
-        self.updater.start(1000)
-        self.updater.update()
-
     def _filter_dirlib_files(self, value):
         if value is None or value == '':
-            self.libraryDirModel.setNameFilters([])
+            self.library_dir_model.setNameFilters([])
         else:
-            self.libraryDirModel.setNameFilters(['*' + value + '*'])
+            self.library_dir_model.setNameFilters(['*' + value + '*'])
 
     def _filter_database_songs(self, pattern):
         if pattern is None or pattern == '':
@@ -229,6 +220,21 @@ class gui_client(QMainWindow, Ui_MainWindow):
             matching_songs = [x['file'] for x in matching_songs]
             self.libraryModel.database = matching_songs
         self.libraryModel.reset()
+
+    def setup_library(self):
+        self.library_dir_model = QFileSystemModel(self)
+        self.library_dir_model.setReadOnly(False)
+        self.library_dir_model.setNameFilterDisables(False)
+        index = self.library_dir_model.setRootPath(DEFAULT_LIB_PATH)
+        self.treeView.setModel(self.library_dir_model)
+        self.treeView.setRootIndex(index)
+
+    def setup_playlist(self):
+        self.playlist = playlist_model(self.mpd_api, self)
+        self.tableView.setModel(self.playlist)
+        self.tableView.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableView.activated.connect(self.play_song)
+
 
     def setup_playlists(self):
         resources = self.mpd_api.lsinfo()
@@ -249,10 +255,22 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.mpd_api.playid(song['id'])
         self.current_song = song
 
-
     def stop_handle(self):
         self.mpd_api.stop()
         self.updater.update()
+
+    def clear_playlist(self):
+        self.mpd_api.clear()
+        self.playlist.playlistinfo = self.mpd_api.playlistinfo()
+        self.playlist.reset()
+
+
+    def save_playlist(self):
+        playlist_name , ok = QInputDialog.getText(self, "Playlist name", 
+                "Playlist name", QLineEdit.Normal)
+        if ok and playlist_name:
+            self.mpd_api.save(playlist_name)
+            self.setup_playlists()
 
     def playnext(self):
         self.mpd_api.next()
