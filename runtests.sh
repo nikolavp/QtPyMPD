@@ -5,5 +5,6 @@
 while true;do 
     python3.1 src/mpdclient/all_tests.py
     read
+    clear
 done
 

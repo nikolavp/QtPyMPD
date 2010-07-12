@@ -73,6 +73,11 @@ class playlist_model_test(unittest.TestCase):
         less_than_minute = self.model.modify_field('time', '30')
         self.assertEquals('30', less_than_minute)
 
+    def test_insert_rows(self):
+        self.assertEquals(2, self.model.rowCount())
+        self.model.insertRows(1, 4)
+        self.assertEquals(6, self.model.rowCount())
+
 class playlists_model_test(unittest.TestCase):
     """A class to test the playlists_model from the gui module"""
     def setUp(self):
@@ -87,7 +92,6 @@ class playlists_model_test(unittest.TestCase):
         indexes = [self.model.createIndex(x, 0) for x in range(5)]
         results = [self.model.data(index, Qt.DisplayRole) for index in indexes]
         self.assertEquals(self.testing_playlists, results)
-
 
 class library_model_test(unittest.TestCase):
     """A class to test the library_model from the gui module"""
