@@ -61,12 +61,10 @@ class playlist_model(QAbstractTableModel):
                 field = self.header_data[index.column()].lower()
                 if field in row.keys():
                     return self.modify_field(field, row[field])
-        return None
 
     def headerData(self, column, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self.header_data[column]
-        return None
 
     def flags(self, index):
         default_flags = QAbstractTableModel.flags(self, index)
@@ -172,16 +170,7 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.mpd_api = mpd_api
         self.current_song = self.mpd_api.currentsong()
 
-        self.actionToggle.triggered.connect(self.toggle_handle)
-        self.actionStop.triggered.connect(self.stop_handle)
-        self.actionPrev.triggered.connect(self.play_previous)
-        self.actionNext.triggered.connect(self.playnext)
-        self.actionSave.triggered.connect(self.save_playlist)
-        self.actionClear.triggered.connect(self.clear_playlist)
-        self.actionLoad_Playlist.triggered.connect(self.load_playlist)
-        self.searchDirLib.textEdited.connect(self._filter_dirlib_files)
-        self.horizontalSlider.sliderReleased.connect(self.seek)
-        self.searchLib.textEdited.connect(self._filter_database_songs)
+        self.setup_actions()
 
         self.setup_library()
 
@@ -194,6 +183,18 @@ class gui_client(QMainWindow, Ui_MainWindow):
         self.updater = updater(self)
         self.updater.start(1000)
         self.updater.update()
+
+    def setup_actions(self):
+        self.actionToggle.triggered.connect(self.toggle_handle)
+        self.actionStop.triggered.connect(self.stop_handle)
+        self.actionPrev.triggered.connect(self.play_previous)
+        self.actionNext.triggered.connect(self.playnext)
+        self.actionSave.triggered.connect(self.save_playlist)
+        self.actionClear.triggered.connect(self.clear_playlist)
+        self.actionLoad_Playlist.triggered.connect(self.load_playlist)
+        self.searchDirLib.textEdited.connect(self._filter_dirlib_files)
+        self.horizontalSlider.sliderReleased.connect(self.seek)
+        self.searchLib.textEdited.connect(self._filter_database_songs)
 
     def update_status(self):
         self.status = self.mpd_api.status()
@@ -265,11 +266,12 @@ class gui_client(QMainWindow, Ui_MainWindow):
     def stop_handle(self):
         self.mpd_api.stop()
         self.horizontalSlider.setValue(0)
+        self.playlist.update_current_song(-1)
         self.updater.update()
 
     def clear_playlist(self):
         self.mpd_api.clear()
-        self.playlist.playlistinfo = self.mpd_api.playlistinfo()
+        self.playlist.playlistinfo = []
         self.playlist.reset()
 
 
@@ -306,7 +308,8 @@ class gui_client(QMainWindow, Ui_MainWindow):
     def toggle_handle(self):
         if 'Play' == self.actionToggle.text():
             self.mpd_api.play()
+            self.playlist.update_current_song(self.current_song['pos'])
         else:
+            self.playlist.update_current_song(-1)
             self.mpd_api.pause()
         self.updater.update()
-        self.playlist.update_current_song(self.current_song['pos'])

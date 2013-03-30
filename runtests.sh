@@ -3,7 +3,7 @@
 #This script run the all test suites just by 
 #hitting enter on the window console.
 while true;do 
-    python3.1 src/mpdclient/all_tests.py
+    python3 src/mpdclient/all_tests.py
     read
     clear
 done
